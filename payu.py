@@ -121,6 +121,26 @@ class PayUOrder(object):
         self.data['ORDER_VAT[]'].append(vat)
         return self
 
+    def set_billing_info(self, first_name, last_name, email, phone, address, city):
+        self.data['BILL_FNAME'] = first_name
+        self.data['BILL_LNAME'] = last_name
+        self.data['BILL_EMAIL'] = email
+        self.data['BILL_PHONE'] = phone
+        self.data['BILL_ADDRESS'] = address
+        self.data['BILL_CITY'] = city
+
+        return self
+
+    def set_delivery_info(self, first_name, last_name, email, phone, address, city):
+        self.data['DELIVERY_FNAME'] = first_name
+        self.data['DELIVERY_LNAME'] = last_name
+        self.data['DELIVERY_EMAIL'] = email
+        self.data['DELIVERY_PHONE'] = phone
+        self.data['DELIVERY_ADDRESS'] = address
+        self.data['DELIVERY_CITY'] = city
+
+        return self
+
     def enable_token(self, token_type='PAY_ON_TIME'):
         self.data['LU_ENABLE_TOKEN'] = '1'
         self.data['LU_TOKEN_TYPE'] = token_type

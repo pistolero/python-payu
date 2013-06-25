@@ -23,10 +23,11 @@ class SignatureBuilder(object):
 
 
 class PayU(object):
-    def __init__(self, merchant, secret, lu_url='https://secure.payu.ua/order/lu.php'):
+    def __init__(self, merchant, secret, lu_url='https://secure.payu.ua/order/lu.php', tokens_url='https://secure.payu.ua/order/tokens/'):
         self.merchant = merchant
         self.secret = secret
         self.lu_url = lu_url
+        self.tokens_url = tokens_url
 
     def order(self, currency, ref=None, date=None, discount=None, destination_city=None, destination_state=None, destination_country=None, pay_method=None, test_order=False, debug=False, language=None, back_ref=None):
         kw = locals()
@@ -35,6 +36,49 @@ class PayU(object):
 
     def ipn(self, data):
         return PayUIpn(self, data)
+
+    def token(self, token):
+        return Token(self, token)
+
+    def signature_builder(self):
+        return SignatureBuilder(self.secret)
+
+
+class Token(object):
+    def __init__(self, payu, token):
+        self.payu = payu
+        self.token = token
+
+    def new_sale(self, amount, currency, ref_no, ext_ref_no):
+        params = {
+            'MERCHANT': self.payu.merchant,
+            'AMOUNT': str(amount),
+            'CURRENCY': str(currency),
+            'METHOD': 'TOKEN_NEWSALE',
+            'REF_NO': ref_no,
+            'EXTERNAL_REF': ext_ref_no,
+            'TIMESTAMP': datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        }
+
+        sig = self.payu.signature_builder()
+        for key, val in sorted(params.iteritems()):
+            sig.add(val)
+
+        params['SIGN'] = str(sig)
+
+        resp = requests.get(self.payu.tokens_url, params=params)
+        return resp.json
+
+
+# MERCHANT
+# *REF_NO
+# *EXTERNAL_REF
+# AMOUNT
+# CURRENCY
+# *TIMESTAMP
+# *METHOD
+# *SIGN
+# CANCEL_REASON
 
 
 class PayUIpn(object):
@@ -141,7 +185,7 @@ class PayUOrder(object):
 
         return self
 
-    def enable_token(self, token_type='PAY_ON_TIME'):
+    def enable_token(self, token_type='PAY_BY_CLICK'):
         self.data['LU_ENABLE_TOKEN'] = '1'
         self.data['LU_TOKEN_TYPE'] = token_type
 
